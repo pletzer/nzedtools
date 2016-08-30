@@ -7,6 +7,11 @@ Example showing how to read a field using iris
 import sys
 import argparse
 import iris
+from mpi4py import MPI
+from pnumpy import CubeDecomp
+
+sz = MPI.COMM_WORLD.Get_size()
+rk = MPI.COMM_WORLD.Get_rank()
 
 iris.FUTURE.netcdf_promote = True
 
@@ -33,7 +38,18 @@ found = False
 for cube in cubes:
     if cube.var_name == args.field:
         found = True
-        print ('{0}: ({1}) shape {2} type {3}'.format(cube.var_name, cube.name(), cube.shape, cube.dtype))
+        decomp = CubeDecomp(sz, cube.shape)
+        slab = decomp.getSlab(rk)
+        if len(slab) == 0:
+            if rk == 0:
+                print('ERROR: could not find a valid decomposition')
+                print('consider running with a different processor count')
+                print('valid processor counts are: {}'.format(decomp.getNumberOfValidProcs()))
+        else:
+            # now read the local data MPI rank rk
+            data = cube[slab]
+            print('[{0}] {4} ({5}) slab = {1} data shape {2} type {3}'.format(rk, slab, 
+                   data.shape, data.dtype, cube.var_name, cube.name()))
 
 if not found:
     print('ERROR: could not find field {}'.format(args.field))
