@@ -57,7 +57,7 @@ for j in range(nj):
         data[j, i] = eval(args.expr)
 
 # create a cube
-cube = iris.cube.Cube(data)
+cube = iris.cube.Cube(data, 'air_temperature')
 cube.add_aux_coord(iris.coords.AuxCoord(lats, "latitude"), (0, 1))
 cube.add_aux_coord(iris.coords.AuxCoord(lons, "longitude"), (0, 1))
 
